@@ -57,7 +57,7 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmeW9pbWFoaGJ6dmZuYWxxYWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzI0MzEsImV4cCI6MjA5NTcwODQzMX0.0WWOa52wv0LNPF2S91R5WKjN5xNmLhqmlpXj4MuUJbM";
         // ============================================================
 
-        let supabase = null;
+        let supabaseClient = null; // 修改变量名防止任何潜在冲突
         let familyKey = localStorage.getItem('family_key') || '';
 
         // 页面加载自动检查本地是否存过暗号
@@ -77,14 +77,13 @@
             familyKey = inputKey;
             initSupabase();
             
-            // 隐藏弹窗并尝试加载，如果密码错，数据库拒绝后会在 fetchPills 重新拦截
             document.getElementById('auth-overlay').style.display = 'none';
             fetchPills(true); 
         }
 
         // 初始化 Supabase 并动态注入密码钥匙作为自定义请求头
         function initSupabase() {
-            supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
                 global: {
                     headers: {
                         'x-family-key': familyKey 
@@ -96,14 +95,13 @@
         // 1. 获取药品列表
         async function fetchPills(isFirstCheck = false) {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('pillbox')
                     .select('*')
                     .order('id', { ascending: true });
 
                 if (error) throw error;
 
-                // 成功拉到数据，证明暗号过了数据库的安全防护策略，本地记录暗号
                 if (isFirstCheck) {
                     localStorage.setItem('family_key', familyKey);
                 }
@@ -153,7 +151,7 @@
 
             if (!name) return alert('请输入药品名称！');
 
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('pillbox')
                 .insert([{ name, location, count: 1 }]);
 
@@ -170,14 +168,14 @@
         async function updateCount(id, newCount) {
             if (newCount < 0) {
                 if(confirm("确定要在药箱中移除该药品吗？")) {
-                    const { error } = await supabase.from('pillbox').delete().eq('id', id);
+                    const { error } = await supabaseClient.from('pillbox').delete().eq('id', id);
                     if (error) alert('删除失败');
                     fetchPills();
                 }
                 return;
             }
 
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('pillbox')
                 .update({ count: newCount })
                 .eq('id', id);
