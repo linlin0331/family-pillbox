@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🏠 智慧家庭药箱 - 分类智能云同步版</title>
+    <title>🏠 智慧家庭药箱 - 分类真实扫码云同步版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root {
             --primary: #2a9d8f;
@@ -40,85 +41,24 @@
             min-height: 100vh;
         }
 
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
+        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .app-logo { font-size: 20px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .sync-badge { font-size: 11px; background-color: var(--primary-light); color: var(--primary); padding: 4px 8px; border-radius: 12px; font-weight: 600; }
 
-        .app-logo {
-            font-size: 20px;
-            font-weight: 800;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .sync-badge {
-            font-size: 11px;
-            background-color: var(--primary-light);
-            color: var(--primary);
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-
-        .alert-banner {
-            background-color: var(--danger-light);
-            border-left: 4px solid var(--danger);
-            color: #c92a2a;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            border-radius: 10px;
-            padding: 12px 8px;
-            text-align: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-            border: 1px solid var(--border-color);
-        }
-
+        .alert-banner { background-color: var(--danger-light); border-left: 4px solid var(--danger); color: #c92a2a; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; }
+        .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+        .stat-card { background: var(--card-bg); border-radius: 10px; padding: 12px 8px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.02); border: 1px solid var(--border-color); }
         .stat-num { font-size: 18px; font-weight: bold; margin-bottom: 2px; }
         .stat-label { font-size: 11px; color: var(--text-muted); }
 
         .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
-        .action-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 12px 8px;
-            text-align: center;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            width: 100%;
-        }
-
+        .action-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 8px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
         .action-card:active { background-color: var(--primary-light); transform: scale(0.96); }
         .action-icon { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .action-card.voice .action-icon { background-color: #e2f0d9; color: var(--success); }
         .action-card.manual .action-icon { background-color: #e2eafc; color: var(--secondary); }
         .action-title { font-size: 12px; font-weight: bold; color: var(--text-main); }
 
-        /* 检索与分类筛选区 */
         .filter-section { background: var(--card-bg); border-radius: 12px; padding: 12px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
         .search-bar { display: flex; align-items: center; background: var(--bg-color); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
         .search-bar i { color: var(--text-muted); margin-right: 8px; }
@@ -131,21 +71,8 @@
         .tab.active { background: var(--primary); color: white; }
         .tab.active-cat { background: var(--secondary); color: white; }
 
-        /* 药品卡片 */
         .med-list { display: flex; flex-direction: column; gap: 12px; }
-        .med-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 14px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 5px solid var(--success);
-            text-align: left;
-            width: 100%;
-            outline: none;
-        }
+        .med-card { background: var(--card-bg); border-radius: 12px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--success); text-align: left; width: 100%; outline: none; }
         .med-card.status-expiry { border-left-color: var(--danger); }
         .med-card.status-warning { border-left-color: var(--warning); }
         .med-card.status-discarded { border-left-color: var(--text-muted); opacity: 0.6; }
@@ -179,6 +106,16 @@
         .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
         .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* 扫码相机取景框区域样式 */
+        #interactive-camera-scan {
+            width: 100%;
+            min-height: 250px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
 
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 8px 0; padding-bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 999; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: var(--text-muted); font-size: 11px; width: 25%; }
@@ -233,7 +170,7 @@
 
         <div class="quick-actions">
             <button class="action-card" onclick="openScanModal()">
-                <div class="action-icon"><i class="fa-solid fa-barcode"></i></div>
+                <div class="action-icon"><i class="fa-solid fa-camera"></i></div>
                 <div class="action-title">扫码入库</div>
             </button>
             <button class="action-card voice" onclick="openVoiceModal()">
@@ -369,363 +306,18 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="scanModal" onclick="checkOuterClick(event, 'scanModal')">
+    <div class="modal-overlay" id="scanModal">
         <div class="modal">
             <div class="modal-header">
-                <div class="modal-title"><i class="fa-solid fa-camera"></i> 模拟扫描条形码</div>
-                <button class="modal-close" onclick="closeModal('scanModal')">&times;</button>
+                <div class="modal-title"><i class="fa-solid fa-camera"></i> 请对准药品条形码</div>
+                <button class="modal-close" onclick="closeScanModal()">&times;</button>
             </div>
-            <div class="form-group">
-                <label>输入预设条形码测试：</label>
-                <div style="display:flex; gap:8px;">
-                    <input type="text" class="form-control" id="simulatedBarcode" value="6901234567890">
-                    <button type="button" class="control-btn" style="width: auto; padding: 0 12px; border-radius: 8px;" onclick="triggerSimulatedScan()">分析</button>
-                </div>
+            <div id="interactive-camera-scan"></div>
+            <div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 10px;">
+                提示：请将药品背面的商品条形码移入框内
             </div>
+            <button class="form-control" style="background:#e9ecef; border:none;" onclick="closeScanModal()">关闭相机</button>
         </div>
     </div>
 
-    <div class="modal-overlay" id="voiceModal" onclick="checkOuterClick(event, 'voiceModal')">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title"><i class="fa-solid fa-microphone"></i> 语音指令分词解析</div>
-                <button class="modal-close" onclick="closeModal('voiceModal')">&times;</button>
-            </div>
-            <div class="form-group">
-                <input type="text" class="form-control" id="voiceTextInput" placeholder="例如：感冒灵两盒放客厅药箱2027-10-01过期" style="margin-bottom:12px;">
-                <button class="form-control" style="background:var(--primary); color:white; border:none;" onclick="processVoiceString()">智能提取输入</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const SUPABASE_URL = "https://wfyoimahhbzvfnalqaba.supabase.co"; 
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmeW9pbWFoaGJ6dmZuYWxxYWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzI0MzEsImV4cCI6MjA5NTcwODQzMX0.0WWOa52wv0LNPF2S91R5WKjN5xNmLhqmlpXj4MuUJbM";
-
-        const BARCODE_DB = {
-            "6901234567890": { name: "芬必得 布洛芬缓释胶囊", spec: "24粒/盒", location: "客厅药箱", category: "消炎镇痛", minStock: 2 },
-            "6911122233344": { name: "999 感冒灵颗粒", spec: "9袋/盒", location: "客厅药箱", category: "感冒发烧", minStock: 2 }
-        };
-
-        let supabaseClient = null;
-        let medications = [];
-        let logs = [];
-        let currentFilterLoc = "全部";
-        let currentFilterCat = "全部";
-        let familyKey = localStorage.getItem('family_key') || '';
-
-        // 页面加载自动尝试解锁
-        window.onload = function() {
-            if (familyKey) {
-                initSupabase();
-                loadDataFromCloud(false);
-            }
-        }
-
-        function verifyPassword() {
-            const inputKey = document.getElementById('family-password').value.trim();
-            if (!inputKey) return alert('请输入暗号！');
-            familyKey = inputKey;
-            initSupabase();
-            loadDataFromCloud(true); 
-        }
-
-        function initSupabase() {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-                global: { headers: { 'x-family-key': familyKey } }
-            });
-        }
-
-        async function loadDataFromCloud(isFromManualClick = false) {
-            const unlockBtn = document.getElementById('unlockBtn');
-            if(isFromManualClick && unlockBtn) unlockBtn.textContent = "正在云验证...";
-
-            try {
-                const { data: meds, error: medErr } = await supabaseClient.from('pillbox').select('*').order('id', { ascending: true });
-                
-                // 如果报错了，多半是因新加字段而没有执行第一步的SQL添加命令，这里进行捕捉友好提示
-                if (medErr) {
-                    console.error("云端拉取错误:", medErr);
-                    alert("连接成功但读取失败！请检查您是否在 Supabase 运行过添加 category 字段的 SQL 命令。");
-                    // 开启软放行保护，避免界面完全死锁
-                    document.getElementById('auth-overlay').style.display = 'none';
-                    return;
-                }
-
-                // 验证完全成功后保存通行证并隐藏遮罩
-                localStorage.setItem('family_key', familyKey);
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('storageStatus').innerHTML = '<i class="fa-solid fa-cloud-check"></i> 云数据已就绪';
-
-                medications = meds.map(m => ({
-                    id: m.id,
-                    name: m.name,
-                    spec: m.spec || '',
-                    location: m.location || '客厅药箱',
-                    category: m.category || '其他', 
-                    expiry: m.expire_date || m.expiry || '',
-                    warnDays: m.warn_days || 30,
-                    stock: m.count !== undefined ? m.count : m.stock,
-                    minStock: m.min_stock || 2,
-                    status: m.status || 'normal'
-                }));
-
-                logs = medications.map((m, index) => ({
-                    id: index,
-                    medName: m.name,
-                    action: "数据安全同步",
-                    qty: m.stock,
-                    time: "刚刚"
-                }));
-
-                updatePillboxState();
-            } catch (e) {
-                console.error(e);
-                alert("无法连接到云数据库，请检查网络或暗号！");
-                if (isFromManualClick && unlockBtn) unlockBtn.textContent = "解锁药箱";
-            }
-        }
-
-        function updatePillboxState() {
-            const today = new Date();
-            today.setHours(0,0,0,0);
-
-            medications.forEach(med => {
-                if (med.status === "discarded") return;
-                const expiryDate = new Date(med.expiry);
-                expiryDate.setHours(0,0,0,0);
-                const diffTime = expiryDate.getTime() - today.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                if (diffDays < 0) med.status = "expired";
-                else if (diffDays <= (med.warnDays || 30)) med.status = "warning";
-                else med.status = "normal";
-            });
-
-            renderAll();
-        }
-
-        function renderAll() {
-            renderDashboard();
-            renderMedList();
-            renderDiscardedList();
-            renderLogs();
-        }
-
-        function renderDashboard() {
-            const normal = medications.filter(m => m.status === 'normal').length;
-            const warning = medications.filter(m => m.status === 'warning').length;
-            const expired = medications.filter(m => m.status === 'expired').length;
-            const lowStock = medications.filter(m => m.status !== 'discarded' && m.stock <= m.minStock).length;
-
-            document.getElementById('statNormal').textContent = normal;
-            document.getElementById('statWarning').textContent = warning;
-            document.getElementById('statExpired').textContent = expired;
-
-            const banner = document.getElementById('alertBanner');
-            const bannerText = document.getElementById('alertBannerText');
-            if (expired > 0 || lowStock > 0 || warning > 0) {
-                banner.style.display = "flex";
-                bannerText.innerHTML = `提示：<strong>${expired}</strong> 款过期，<strong>${warning}</strong> 款临近失效，<strong>${lowStock}</strong> 款低库存！`;
-            } else {
-                banner.style.display = "none";
-            }
-        }
-
-        function renderMedList() {
-            const container = document.getElementById('medListContainer');
-            container.innerHTML = '';
-            
-            const searchKeyword = document.getElementById('searchInput').value.trim().toLowerCase();
-            const activeMeds = medications.filter(m => m.status !== 'discarded');
-
-            if (activeMeds.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding: 30px; color: var(--text-muted);">药箱内暂无数据</div>`;
-                return;
-            }
-
-            activeMeds.forEach(med => {
-                if (currentFilterLoc !== "全部" && med.location !== currentFilterLoc) return;
-                if (currentFilterCat !== "全部" && med.category !== currentFilterCat) return;
-                if (searchKeyword && !med.name.toLowerCase().includes(searchKeyword)) return;
-
-                const isLowStock = med.stock <= med.minStock;
-                let statusBadge = '';
-                let cardClass = '';
-
-                if (med.status === 'expired') { statusBadge = `<span class="badge badge-danger">已过期</span>`; cardClass = 'status-expiry'; }
-                else if (med.status === 'warning') { statusBadge = `<span class="badge badge-warning">临近过期</span>`; cardClass = 'status-warning'; }
-                if (isLowStock) statusBadge += ` <span class="badge badge-danger">库存低</span>`;
-
-                const card = document.createElement('div');
-                card.className = `med-card ${cardClass}`;
-                card.setAttribute("onclick", `openEditModal(${med.id})`);
-                
-                card.innerHTML = `
-                    <div class="med-details">
-                        <div class="med-title">${med.name} ${statusBadge}</div>
-                        <div class="med-spec">规格：${med.spec || '常规'}</div>
-                        <div class="med-info-row">
-                            <span class="badge badge-category"><i class="fa-solid fa-tags"></i> ${med.category}</span>
-                            <span class="badge badge-location"><i class="fa-solid fa-location-dot"></i> ${med.location}</span>
-                            <span><i class="fa-solid fa-calendar-days"></i> 效期:${med.expiry}</span>
-                        </div>
-                    </div>
-                    <div class="stock-control" onclick="event.stopPropagation()">
-                        <button class="control-btn" onclick="quickChangeStock(${med.id}, -1)">－</button>
-                        <span class="stock-num ${isLowStock ? 'low' : ''}">${med.stock}</span>
-                        <button class="control-btn" onclick="quickChangeStock(${med.id}, 1)">＋</button>
-                    </div>
-                    <div onclick="event.stopPropagation()" style="margin-left:8px;">
-                        <button class="btn-mini" onclick="discardMed(${med.id})"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function renderDiscardedList() {
-            const container = document.getElementById('discardedListContainer');
-            container.innerHTML = '';
-            const discardedMeds = medications.filter(m => m.status === 'discarded');
-
-            discardedMeds.forEach(med => {
-                const card = document.createElement('div');
-                card.className = `med-card status-discarded`;
-                card.innerHTML = `
-                    <div class="med-details">
-                        <div class="med-title">${med.name} <span class="badge badge-discarded">${med.category} · 已归档</span></div>
-                        <div class="med-info-row"><span>原位置: ${med.location}</span></div>
-                    </div>
-                    <button class="control-btn" style="width:auto; padding: 0 8px; border-radius: 6px;" onclick="restoreMed(${med.id})">恢复</button>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function renderLogs() {
-            const container = document.getElementById('logsContainer');
-            container.innerHTML = '';
-            logs.slice().reverse().forEach(log => {
-                const item = document.createElement('div');
-                item.className = 'log-item';
-                item.innerHTML = `<div><strong>${log.medName}</strong>: ${log.action}</div><div class="log-time">${log.time}</div>`;
-                container.appendChild(item);
-            });
-        }
-
-        async function quickChangeStock(id, change) {
-            const med = medications.find(m => m.id === id);
-            if (med) {
-                const targetStock = Math.max(0, med.stock + change);
-                await supabaseClient.from('pillbox').update({ count: targetStock }).eq('id', id);
-                loadDataFromCloud();
-            }
-        }
-
-        async function saveMedication(event) {
-            event.preventDefault();
-            const formId = document.getElementById('formMedId').value;
-            const payload = {
-                name: document.getElementById('formName').value,
-                category: document.getElementById('formCategory').value,
-                spec: document.getElementById('formSpec').value,
-                location: document.getElementById('formLocation').value,
-                expire_date: document.getElementById('formExpiry').value,
-                warn_days: parseInt(document.getElementById('formWarnDays').value) || 30,
-                count: parseInt(document.getElementById('formStock').value) || 0,
-                min_stock: parseInt(document.getElementById('formMinStock').value) || 0,
-                status: 'normal'
-            };
-
-            if (formId) await supabaseClient.from('pillbox').update(payload).eq('id', parseInt(formId));
-            else await supabaseClient.from('pillbox').insert([payload]);
-
-            closeModal('addModal');
-            loadDataFromCloud();
-        }
-
-        async function discardMed(id) { await supabaseClient.from('pillbox').update({ status: 'discarded' }).eq('id', id); loadDataFromCloud(); }
-        async function restoreMed(id) { await supabaseClient.from('pillbox').update({ status: 'normal' }).eq('id', id); loadDataFromCloud(); }
-
-        function switchPane(paneName, btnElement) {
-            document.querySelectorAll('.view-pane').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.getElementById(`pane${paneName}`).classList.add('active');
-            btnElement.classList.add('active');
-        }
-
-        function switchLocationTab(loc) {
-            currentFilterLoc = loc;
-            document.querySelectorAll('#locationTabs .tab').forEach(b => b.classList.toggle('active', b.textContent === loc));
-            renderMedList();
-        }
-
-        function switchCategoryTab(cat) {
-            currentFilterCat = cat;
-            document.querySelectorAll('#categoryTabs .tab').forEach(b => b.classList.toggle('active-cat', b.textContent === cat));
-            renderMedList();
-        }
-
-        function filterMeds() { renderMedList(); }
-        function closeModal(id) { document.getElementById(id).style.display = "none"; }
-        function checkOuterClick(event, id) { if (event.target.id === id) closeModal(id); }
-
-        function openAddModal() {
-            document.getElementById('modalFormTitle').textContent = "💊 手动录入新药";
-            document.getElementById('formMedId').value = "";
-            document.getElementById('medForm').reset();
-            const nextYear = new Date(); nextYear.setFullYear(nextYear.getFullYear() + 1);
-            document.getElementById('formExpiry').value = nextYear.toISOString().substring(0, 10);
-            document.getElementById('addModal').style.display = "flex";
-        }
-
-        function openEditModal(id) {
-            const med = medications.find(m => m.id === id);
-            if (!med) return;
-            document.getElementById('modalFormTitle').textContent = "✏️ 属性修改编辑";
-            document.getElementById('formMedId').value = med.id;
-            document.getElementById('formName').value = med.name;
-            document.getElementById('formCategory').value = med.category; 
-            document.getElementById('formSpec').value = med.spec;
-            document.getElementById('formLocation').value = med.location;
-            document.getElementById('formExpiry').value = med.expiry;
-            document.getElementById('formWarnDays').value = med.warnDays;
-            document.getElementById('formStock').value = med.stock;
-            document.getElementById('formMinStock').value = med.minStock;
-            document.getElementById('addModal').style.display = "flex";
-        }
-
-        function openScanModal() { document.getElementById('scanModal').style.display = "flex"; }
-        function openVoiceModal() { document.getElementById('voiceModal').style.display = "flex"; }
-
-        function triggerSimulatedScan() {
-            const barcode = document.getElementById('simulatedBarcode').value.trim();
-            if (BARCODE_DB[barcode]) {
-                const match = BARCODE_DB[barcode];
-                closeModal('scanModal'); openAddModal();
-                document.getElementById('formName').value = match.name;
-                document.getElementById('formCategory').value = match.category; 
-                document.getElementById('formSpec').value = match.spec;
-                document.getElementById('formLocation').value = match.location;
-            } else {
-                closeModal('scanModal'); openAddModal();
-                document.getElementById('formName').value = "未知条码药品";
-            }
-        }
-
-        function processVoiceString() {
-            const text = document.getElementById('voiceTextInput').value.trim();
-            if(!text) return;
-            let matchedCat = "其他";
-            if(text.includes("感冒") || text.includes("发烧") || text.includes("热")) matchedCat = "感冒发烧";
-            if(text.includes("拉肚子") || text.includes("胃") || text.includes("泻")) matchedCat = "肠胃消化";
-            if(text.includes("过敏") || text.includes("痒")) matchedCat = "抗过敏药";
-
-            closeModal('voiceModal'); openAddModal();
-            document.getElementById('formName').value = text.split(/[0-9]|放|在|进/)[0] || "语音药品";
-            document.getElementById('formCategory').value = matchedCat; 
-        }
-    </script>
-</body>
-</html>
+    <div class="modal-overlay" id="voiceModal" onclick="
