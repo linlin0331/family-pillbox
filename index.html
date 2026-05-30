@@ -789,4 +789,22 @@
                 document.getElementById('formLocation').value = match.location;
             } else {
                 closeModal('scanModal'); openAddModal();
-                document.getElementById('formName').value = "未知
+                document.getElementById('formName').value = "未知条码药品";
+            }
+        }
+
+        function processVoiceString() {
+            const text = document.getElementById('voiceTextInput').value.trim();
+            if(!text) return;
+            let matchedCat = "其他";
+            if(text.includes("感冒") || text.includes("发烧") || text.includes("热")) matchedCat = "感冒发烧";
+            if(text.includes("拉肚子") || text.includes("胃") || text.includes("泻")) matchedCat = "肠胃消化";
+            if(text.includes("过敏") || text.includes("痒")) matchedCat = "抗过敏药";
+
+            closeModal('voiceModal'); openAddModal();
+            document.getElementById('formName').value = text.split(/[0-9]|放|在|进/)[0] || "语音药品";
+            document.getElementById('formCategory').value = matchedCat; // 智能语音匹配分类
+        }
+    </script>
+</body>
+</html>
