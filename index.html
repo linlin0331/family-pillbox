@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>🏠 智慧家庭药箱 - 增强版 V2</title>
+    <title>🏠 智慧家庭药箱 - 增强版 V2.1 - 20260531</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -636,11 +636,10 @@
 </head>
 <body>
 
-    <!-- 登录遮罩 -->
     <div id="auth-overlay">
         <div class="box">
             <h3 style="color:var(--primary); margin-bottom:8px;">
-                <i class="fa-solid fa-lock"></i> 智慧家庭药箱
+                <i class="fa-solid fa-lock"></i> 智慧家庭药箱 V2.1
             </h3>
             <p style="color:#6c757d; font-size:12px; margin-bottom:20px;">
                 请输入你在 Supabase 中设定的“家庭暗号”
@@ -665,12 +664,11 @@
         </div>
     </div>
 
-    <!-- 主页 -->
     <div id="paneHome" class="view-pane active">
         <div class="app-header">
             <div class="app-logo">
                 <i class="fa-solid fa-prescription-bottle-medical"></i>
-                智慧家庭药箱
+                智慧家庭药箱 V2.1
             </div>
             <div class="sync-badge" id="storageStatus">
                 <i class="fa-solid fa-cloud"></i> 准备就绪
@@ -742,7 +740,6 @@
         <div class="med-list" id="medListContainer"></div>
     </div>
 
-    <!-- 历史常购 -->
     <div id="paneDiscarded" class="view-pane">
         <div class="app-header">
             <div class="app-logo">
@@ -753,7 +750,6 @@
         <div class="med-list" id="discardedListContainer"></div>
     </div>
 
-    <!-- 设置页 -->
     <div id="paneSettings" class="view-pane">
         <div class="app-header">
             <div class="app-logo">
@@ -782,7 +778,6 @@
         </div>
     </div>
 
-    <!-- 底部导航 -->
     <div class="bottom-nav">
         <button class="nav-item active" onclick="switchPane('Home', this)">
             <i class="fa-solid fa-house-medical"></i>
@@ -798,7 +793,6 @@
         </button>
     </div>
 
-    <!-- 新增 / 编辑弹窗 -->
     <div class="modal-overlay" id="addModal" onclick="checkOuterClick(event, 'addModal')">
         <div class="modal">
             <div class="modal-header">
@@ -862,7 +856,6 @@
         </div>
     </div>
 
-    <!-- 扫码弹窗 -->
     <div class="modal-overlay" id="scanModal" onclick="checkOuterClick(event, 'scanModal')">
         <div class="modal">
             <div class="modal-header">
@@ -887,7 +880,6 @@
         </div>
     </div>
 
-    <!-- 语音录入弹窗 -->
     <div class="modal-overlay" id="voiceModal" onclick="checkOuterClick(event, 'voiceModal')">
         <div class="modal">
             <div class="modal-header">
@@ -910,6 +902,7 @@
         // =========================
         // Supabase 配置
         // =========================
+        const APP_VERSION = "20260531-V2.1";
         const SUPABASE_URL = "https://wfyoimahhbzvfnalqaba.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmeW9pbWFoaGJ6dmZuYWxxYWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzI0MzEsImV4cCI6MjA5NTcwODQzMX0.0WWOa52wv0LNPF2S91R5WKjN5xNmLhqmlpXj4MuUJbM";
 
@@ -921,71 +914,74 @@
         let html5QrScanner = null;
         let scannerRunning = false;
 
-        // 页面启动
         window.onload = function () {
+            console.log("Loaded version:", APP_VERSION);
             bindKeyboardEvents();
-            const savedKey = localStorage.getItem('family_key');
+
+            const savedKey = localStorage.getItem("family_key");
             if (savedKey) {
-                document.getElementById('family-password').value = savedKey;
-                verifyPassword();
+                document.getElementById("family-password").value = savedKey;
+                // 如果你想恢复自动登录，取消下面这行注释
+                // verifyPassword();
             }
         };
 
         function bindKeyboardEvents() {
-            const pwdInput = document.getElementById('family-password');
-            pwdInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
+            const pwdInput = document.getElementById("family-password");
+            pwdInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
                     verifyPassword();
                 }
             });
         }
 
-        function setStorageStatus(text, iconClass = 'fa-cloud') {
-            document.getElementById('storageStatus').innerHTML = `<i class="fa-solid ${iconClass}"></i> ${text}`;
+        function setStorageStatus(text, iconClass = "fa-cloud") {
+            document.getElementById("storageStatus").innerHTML = `<i class="fa-solid ${iconClass}"></i> ${text}`;
         }
 
         function setLoginLoading(isLoading) {
-            const btn = document.getElementById('unlockBtn');
+            const btn = document.getElementById("unlockBtn");
             btn.disabled = isLoading;
             btn.innerText = isLoading ? "正在验证并拉取..." : "确认解锁并登录";
         }
 
         function showLoginError(msg) {
-            const errDiv = document.getElementById('login-error');
+            const errDiv = document.getElementById("login-error");
             errDiv.innerText = msg;
-            errDiv.style.display = 'block';
+            errDiv.style.display = "block";
         }
 
         function hideLoginError() {
-            const errDiv = document.getElementById('login-error');
-            errDiv.innerText = '';
-            errDiv.style.display = 'none';
+            const errDiv = document.getElementById("login-error");
+            errDiv.innerText = "";
+            errDiv.style.display = "none";
         }
 
         function mapDbRowToMed(m) {
             return {
                 id: m.id,
-                name: m.name || '',
-                spec: m.spec || '',
-                location: m.location || '客厅药箱',
-                expiry: m.expire_date || '',
-                stock: typeof m.count === 'number' ? m.count : 0,
-                minStock: typeof m.min_stock === 'number' ? m.min_stock : 2,
-                status: m.status || 'normal',
-                warnDays: typeof m.warn_days === 'number' ? m.warn_days : 30
+                name: m.name || "",
+                spec: m.spec || "",
+                location: m.location || "客厅药箱",
+                expiry: m.expire_date || "",
+                stock: typeof m.count === "number" ? m.count : 0,
+                minStock: typeof m.min_stock === "number" ? m.min_stock : 2,
+                status: m.status || "normal",
+                warnDays: typeof m.warn_days === "number" ? m.warn_days : 30
             };
         }
 
         async function verifyPassword() {
-            const inputKey = document.getElementById('family-password').value.trim();
+            const inputKey = document.getElementById("family-password").value.trim();
 
             if (!inputKey) {
                 alert("请输入暗号！");
                 return;
             }
 
-            if (!SUPABASE_URL || SUPABASE_URL === "https://wfyoimahhbzvfnalqaba.supabase.co" || !SUPABASE_KEY || SUPABASE_KEY === "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmeW9pbWFoaGJ6dmZuYWxxYWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzI0MzEsImV4cCI6MjA5NTcwODQzMX0.0WWOa52wv0LNPF2S91R5WKjN5xNmLhqmlpXj4MuUJbM") {
-                alert("请先填写正确的 Supabase URL 和 anon key。");
+            // ✅ 修正：这里只检查是否为空，不再把真实 URL / key 当成错误值
+            if (!SUPABASE_URL || !SUPABASE_KEY) {
+                alert("Supabase 配置缺失，请检查 URL 和 anon key。");
                 return;
             }
 
@@ -1507,8 +1503,8 @@
                         closeModal("scanModal");
                         openAddModal(decodedText, true);
                     },
-                    (errorMessage) => {
-                        // 持续扫描过程中会反复回调失败信息，这里不弹错
+                    () => {
+                        // 持续扫描失败回调，不提示
                     }
                 );
 
@@ -1556,6 +1552,7 @@
             location.reload();
         }
 
+        // ✅ 修正：正确的 HTML 转义
         function escapeHtml(str) {
             if (str === null || str === undefined) return "";
             return String(str)
