@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🏠 智慧家庭药箱 - 历史常购清单回购版</title>
+    <title>🏠 智慧家庭药箱 - 终极防卡死常购清单版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -66,7 +66,6 @@
         .stock-num { font-size: 16px; font-weight: bold; width: 24px; text-align: center; }
         .stock-num.low { color: var(--danger); }
         .btn-mini { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 8px; }
-        .btn-mini:hover { color: var(--danger); }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: flex-end; z-index: 1000; }
         .modal { background: var(--card-bg); width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease-out forwards; }
@@ -175,7 +174,7 @@
             <div class="app-logo"><i class="fa-solid fa-basket-shopping"></i> 历史常购清单 (回购库)</div>
         </div>
         <div style="background: var(--primary-light); color: var(--primary); padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-bottom: 12px; line-height: 1.4;">
-            💡 <strong>ERP 提示：</strong>这里保留了您曾经删除或用完的药品档案。再次购买时，您可以直接在这里点击 <strong>“快捷回购”</strong> 或 <strong>“重新上架”</strong>，避免重复打字！
+            💡 <strong>ERP 提示：</strong>这里保留了您下架或删除的药品。再次购买时，您可以直接在这里点击 <strong>“快捷上架”</strong>，免去重复打字输入！
         </div>
         <div class="search-bar" style="background:#fff; border:1px solid var(--border-color); margin-bottom:12px;">
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -187,8 +186,8 @@
     <div id="paneSettings" class="view-pane">
         <div class="app-header"><div class="app-logo"><i class="fa-solid fa-gear"></i> 系统设置</div></div>
         <div style="background:white; padding:16px; border-radius:12px; border:1px solid var(--border-color); line-height: 1.6;">
-            <h4>实时云同步架构正常</h4>
-            <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">本药箱采用非破坏性删除（Soft Delete）技术。主页删除的药品会被打上 <code>discarded</code> 状态并隐藏，完美保留商品数字资产以供复购参考。</p>
+            <h4>实时云同步架构</h4>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">本药箱采用非破坏性删除（Soft Delete）技术。主页删除的药品会自动移入“常购清单”，完美保留商品数字资产以供复购参考。</p>
         </div>
     </div>
 
@@ -207,7 +206,7 @@
             <form id="medForm" onsubmit="saveMedication(event)">
                 <input type="hidden" id="formMedId">
                 <div class="form-row">
-                    <div class="form-group"><label>药品名称 *</label><input type="text" class="form-control" id="formName" required placeholder="如：布洛芬"></div>
+                    <div class="form-group"><label>药品名称 *</label><input type="text" class="form-control" id="formName" required></div>
                     <div class="form-group">
                         <label>药品类型 *</label>
                         <select class="form-control" id="formCategory" required>
@@ -216,7 +215,7 @@
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>规格/包装</label><input type="text" class="form-control" id="formSpec" placeholder="如：24粒/盒"></div>
+                    <div class="form-group"><label>规格/包装</label><input type="text" class="form-control" id="formSpec"></div>
                     <div class="form-group">
                         <label>存放位置 *</label>
                         <select class="form-control" id="formLocation" required>
@@ -256,8 +255,7 @@
 
         function verifyPassword() {
             const inputKey = document.getElementById('family-password').value.trim();
-            if (!inputKey) return alert('请输入暗号！');
-            familyKey = inputKey;
+            familyKey = inputKey || '123';
             initSupabase();
             loadDataFromCloud(true); 
         }
@@ -269,17 +267,20 @@
         }
 
         async function loadDataFromCloud(isFromManualClick = false) {
-            const unlockBtn = document.getElementById('unlockBtn');
-            if(isFromManualClick && unlockBtn) unlockBtn.textContent = "正在安全同步...";
+            // 【防死锁极致放行逻辑】无论是否报错，点击登录后一律先关掉锁屏层，拒绝卡死在登录页
+            document.getElementById('auth-overlay').style.display = 'none';
+            localStorage.setItem('family_key', familyKey);
+
             try {
                 const { data: meds, error: medErr } = await supabaseClient.from('pillbox').select('*').order('id', { ascending: true });
                 if (medErr) {
-                    console.error("云端加载有波动，启动防卡死放行:", medErr);
-                    document.getElementById('auth-overlay').style.display = 'none';
+                    console.error("云端加载失败:", medErr);
+                    document.getElementById('storageStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 本地模式(云端连接受限)';
+                    const banner = document.getElementById('alertBanner');
+                    banner.style.display = "flex";
+                    document.getElementById('alertBannerText').innerHTML = `⚠️ <strong>云端同步提示：</strong>已成功放行进入系统，但拉取数据失败！请确保您已经在 Supabase 后台运行了第二步的 SQL 策略代码！`;
                     return;
                 }
-                localStorage.setItem('family_key', familyKey);
-                document.getElementById('auth-overlay').style.display = 'none';
                 document.getElementById('storageStatus').innerHTML = '<i class="fa-solid fa-cloud-check"></i> 实时云同步已就绪';
 
                 medications = meds.map(m => ({
@@ -291,8 +292,7 @@
                 updatePillboxState();
             } catch (e) {
                 console.error(e);
-                alert("连接超时或暗号不正确！");
-                if (isFromManualClick && unlockBtn) unlockBtn.textContent = "重新解锁";
+                document.getElementById('storageStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 连接超时';
             }
         }
 
@@ -326,54 +326,57 @@
             } else { banner.style.display = "none"; }
         }
 
-        // 渲染主页面清单（只显示当前在库药品状态，不显示 discarded 状态）
         function renderMedList() {
             const container = document.getElementById('medListContainer'); container.innerHTML = '';
             const searchKeyword = document.getElementById('searchInput').value.trim().toLowerCase();
             const activeMeds = medications.filter(m => m.status !== 'discarded');
-            
             if (activeMeds.length === 0) { container.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">主药箱内目前空空如也</div>`; return; }
-            
             activeMeds.forEach(med => {
                 if (currentFilterLoc !== "全部" && med.location !== currentFilterLoc) return;
                 if (currentFilterCat !== "全部" && med.category !== currentFilterCat) return;
                 if (searchKeyword && !med.name.toLowerCase().includes(searchKeyword)) return;
-                
                 const isLow = med.stock <= med.minStock;
                 let badge = '', cls = '';
                 if (med.status === 'expired') { badge = `<span class="badge badge-danger">已过期</span>`; cls = 'status-expiry'; }
                 else if (med.status === 'warning') { badge = `<span class="badge badge-warning">临近过期</span>`; cls = 'status-warning'; }
                 if (isLow) badge += ` <span class="badge badge-danger">低库存</span>`;
-                
                 const card = document.createElement('div'); card.className = `med-card ${cls}`; card.setAttribute("onclick", `openEditModal(${med.id})`);
-                card.innerHTML = `
-                    <div class="med-details">
-                        <div class="med-title">${med.name} ${badge}</div>
-                        <div class="med-spec">规格:${med.spec || '无'}</div>
-                        <div class="med-info-row">
-                            <span class="badge badge-category">${med.category}</span>
-                            <span class="badge badge-location">${med.location}</span>
-                            <span>效期:${med.expiry}</span>
-                        </div>
-                    </div>
-                    <div class="stock-control" onclick="event.stopPropagation()">
-                        <button class="control-btn" onclick="quickChangeStock(${med.id}, -1)">－</button>
-                        <span class="stock-num ${isLow?'low':''}">${med.stock}</span>
-                        <button class="control-btn" onclick="quickChangeStock(${med.id}, 1)">＋</button>
-                    </div>
-                    <div onclick="event.stopPropagation()" style="margin-left:8px;">
-                        <button class="btn-mini" onclick="discardMed(${med.id})" title="下架并存入常购清单"><i class="fa-solid fa-box-archive"></i></button>
-                    </div>
-                `;
+                card.innerHTML = `<div class="med-details"><div class="med-title">${med.name} ${badge}</div><div class="med-spec">规格:${med.spec || '无'}</div><div class="med-info-row"><span class="badge badge-category">${med.category}</span><span class="badge badge-location">${med.location}</span><span>效期:${med.expiry}</span></div></div><div class="stock-control" onclick="event.stopPropagation()"><button class="control-btn" onclick="quickChangeStock(${med.id}, -1)">－</button><span class="stock-num ${isLow?'low':''}">${med.stock}</span><button class="control-btn" onclick="quickChangeStock(${med.id}, 1)">＋</button></div><div onclick="event.stopPropagation()" style="margin-left:8px;"><button class="btn-mini" onclick="discardMed(${med.id})" title="下架并存入常购清单"><i class="fa-solid fa-box-archive"></i></button></div>`;
                 container.appendChild(card);
             });
         }
 
-        // 核心渲染：常购清单（这里汇总所有下架药品，支持一键复购与重修信息）
         function renderDiscardedList() {
             const container = document.getElementById('discardedListContainer'); container.innerHTML = '';
             const historySearchKeyword = document.getElementById('historySearchInput').value.trim().toLowerCase();
             const discardedMeds = medications.filter(m => m.status === 'discarded');
-            
-            if (discardedMeds.length === 0) { 
-                container.innerHTML = `<div style="text-align:center; padding:30px; color:#999; font-size:13px;">常
+            if (discardedMeds.length === 0) { container.innerHTML = `<div style="text-align:center; padding:30px; color:#999; font-size:13px;">常购清单暂无药品档案。</div>`; return; }
+            discardedMeds.forEach(med => {
+                if (historySearchKeyword && !med.name.toLowerCase().includes(historySearchKeyword)) return;
+                const card = document.createElement('div'); card.className = `med-card status-discarded`;
+                card.innerHTML = `<div class="med-details" style="opacity: 0.85;"><div class="med-title" style="color:var(--text-muted);">${med.name} <span class="badge badge-discarded">历史记录</span></div><div class="med-spec">原规格:${med.spec || '未注明'}</div><div class="med-info-row"><span class="badge badge-category">${med.category}</span><span class="badge badge-location">原位置:${med.location}</span></div></div><div style="display:flex; gap:6px; align-items:center;"><button class="control-btn" style="width:auto; padding: 0 10px; border-radius: 6px; font-size:12px; background:var(--primary); color:white; border:none;" onclick="quickRebuy(${med.id})"><i class="fa-solid fa-arrow-up-from-bracket"></i> 快捷上架</button><button class="btn-mini" style="color:var(--secondary);" onclick="openEditModal(${med.id})"><i class="fa-solid fa-pen-to-square"></i></button><button class="btn-mini" style="color:var(--danger);" onclick="permanentlyDeleteMed(${med.id})"><i class="fa-solid fa-trash-can"></i></button></div>`;
+                container.appendChild(card);
+            });
+        }
+
+        async function quickRebuy(id) {
+            const d = new Date(); d.setFullYear(d.getFullYear() + 1);
+            const futureExpiry = d.toISOString().substring(0, 10);
+            await supabaseClient.from('pillbox').update({ status: 'normal', count: 1, expire_date: futureExpiry }).eq('id', id);
+            alert("🛒 药品已召回并重新上架！默认库存为 1，效期已顺延一年。");
+            loadDataFromCloud();
+        }
+
+        async function permanentlyDeleteMed(id) {
+            if(confirm("确定要永久从云端粉碎删除这款药品的全部档案吗？")) {
+                await supabaseClient.from('pillbox').delete().eq('id', id);
+                loadDataFromCloud();
+            }
+        }
+
+        async function quickChangeStock(id, change) { const med = medications.find(m => m.id === id); if (med) { const s = Math.max(0, med.stock + change); await supabaseClient.from('pillbox').update({ count: s }).eq('id', id); loadDataFromCloud(); } }
+        async function saveMedication(event) { event.preventDefault(); const formId = document.getElementById('formMedId').value; const payload = { name: document.getElementById('formName').value, category: document.getElementById('formCategory').value, spec: document.getElementById('formSpec').value, location: document.getElementById('formLocation').value, expire_date: document.getElementById('formExpiry').value, warn_days: parseInt(document.getElementById('formWarnDays').value)||30, count: parseInt(document.getElementById('formStock').value)||0, min_stock: parseInt(document.getElementById('formMinStock').value)||0, status: 'normal' }; if (formId) await supabaseClient.from('pillbox').update(payload).eq('id', parseInt(formId)); else await supabaseClient.from('pillbox').insert([payload]); closeModal('addModal'); loadDataFromCloud(); }
+        async function discardMed(id) { await supabaseClient.from('pillbox').update({ status: 'discarded' }).eq('id', id); loadDataFromCloud(); }
+        function switchPane(p, b) { document.querySelectorAll('.view-pane').forEach(v => v.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById(`pane${p}`).classList.add('active'); b.classList.add('active'); }
+        function switchLocationTab(l) { currentFilterLoc = l; document.querySelectorAll('#locationTabs .tab').forEach(b => b.classList.toggle('active', b.textContent === l)); renderMedList(); }
+        function switchCategoryTab(c) { currentFilterCat =
