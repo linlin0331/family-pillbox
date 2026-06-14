@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>🏠 智慧家庭药箱 - 增强版 V2.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root {
@@ -297,6 +297,10 @@
                 alert("Supabase 配置缺失，请检查 URL 和 anon key。");
                 return;
             }
+            if (location.protocol === "file:") {
+                showLoginError("❌ 当前页面通过 file:// 打开，浏览器可能会阻止网络请求。请使用本地服务器访问此页面，如：python -m http.server 或 Live Server。" );
+                return;
+            }
             setLoginLoading(true);
             hideLoginError();
             setStorageStatus("正在连接云端...", "fa-cloud-arrow-up");
@@ -313,7 +317,10 @@
             } catch (e) {
                 console.error("登录失败:", e);
                 setStorageStatus("连接失败", "fa-cloud-exclamation");
-                showLoginError(`❌ 登录失败：${e.message || "无法读取数据，请检查暗号 / RLS / URL / Key 配置。"}`);
+                const failMessage = e && e.message === "Failed to fetch"
+                    ? "❌ 网络请求失败，请检查浏览器是否允许访问外部网络、是否通过 file:// 打开页面，或 Supabase URL 是否可访问。"
+                    : `❌ 登录失败：${e.message || "无法读取数据，请检查暗号 / RLS / URL / Key 配置。"}`;
+                showLoginError(failMessage);
             } finally {
                 setLoginLoading(false);
             }
